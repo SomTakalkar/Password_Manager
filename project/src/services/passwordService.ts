@@ -3,37 +3,23 @@ import { encryptPassword, decryptPassword } from '../utils/encryption';
 import type { StoredPassword } from '../types';
 
 export const passwordService = {
-    async createPassword(
-        data: Omit<StoredPassword, 'id' | 'createdAt' | 'updatedAt'>,
-        masterKey: string
-    ): Promise<StoredPassword> {
-        try {
-            const encryptedPassword = await encryptPassword(data.password, masterKey);
-            console.log('🔐 Encrypted Password:', encryptedPassword);
+    async createPassword(data: Omit<StoredPassword, 'id' | 'createdAt' | 'updatedAt'>, masterKey: string): Promise<StoredPassword> {
+        const encryptedPassword = await encryptPassword(data.password, masterKey);
 
-            const { data: newPassword, error } = await supabase
-                .from('passwords')
-                .insert({
-                    title: data.title,
-                    username: data.username,
-                    encrypted_password: encryptedPassword,
-                    url: data.url,
-                    notes: data.notes,
-                })
-                .select()
-                .single();
+        const { data: newPassword, error } = await supabase
+            .from('passwords')
+            .insert({
+                title: data.title,
+                username: data.username,
+                encrypted_password: encryptedPassword,
+                url: data.url,
+                notes: data.notes,
+            })
+            .select()
+            .single();
 
-            if (error) {
-                console.error('❌ Supabase Insert Error:', error);
-                throw error;
-            }
-
-            console.log('✅ New Password Saved:', newPassword);
-            return newPassword as StoredPassword;
-        } catch (err) {
-            console.error('❌ Create Password Error:', err);
-            throw err;
-        }
+        if (error) throw error;
+        return newPassword as StoredPassword;
     },
 
     async getPasswords(): Promise<StoredPassword[]> {

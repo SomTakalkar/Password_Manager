@@ -5,14 +5,14 @@ export const encryptPassword = async (password: string, masterKey: string): Prom
   // Generate a random IV (Initialization Vector)
   const iv = CryptoJS.lib.WordArray.random(16);
 
-  // Derive an encryption key using PBKDF2
+  // Derive an encryption key using PBKDF2 and convert to string
   const key = CryptoJS.PBKDF2(masterKey, iv, {
     keySize: 256 / 32,
     iterations: 10000
-  });
+  }).toString(CryptoJS.enc.Hex);  // Convert key to string
 
   // Encrypt the password using AES-CBC
-  const encrypted = CryptoJS.AES.encrypt(password, key, {
+  const encrypted = CryptoJS.AES.encrypt(password, CryptoJS.enc.Hex.parse(key), {
     mode: CryptoJS.mode.CBC,
     padding: CryptoJS.pad.Pkcs7,
     iv: iv
