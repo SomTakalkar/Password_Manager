@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Shield } from 'lucide-react';
-import { Auth0Provider, useAuth0 } from '@auth0/auth0-react';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import Login from './components/auth/Login';
 import Dashboard from './components/dashboard/Dashboard';
+import { auth } from './lib/firebase';
 import PasswordGenerator from './components/tools/PasswordGenerator';
 import Layout from './components/layout/Layout';
 import { useTheme } from './hooks/useTheme';
@@ -12,14 +13,27 @@ import { useInactivityTimer } from './hooks/useInactivityTimer';
 const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes
 
 function App() {
-  const { theme } = useTheme();
-  const { isAuthenticated, logout } = useAuth0();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const { theme, setTheme } = useTheme(); // Destructure setTheme from useTheme
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useInactivityTimer(INACTIVITY_TIMEOUT, () => {
     if (isAuthenticated) {
-      logout({ logoutParams: { returnTo: window.location.origin } });
+      signOut(auth).catch((error) => {
+        console.error('Logout error:', error);
+      });
     }
   });
+
+  if(isAuthenticated === null){
+    return null
+  }
 
   if (!isAuthenticated) {
     return (
@@ -40,7 +54,7 @@ function App() {
 
   return (
     <Router>
-      <Layout>
+      <Layout setTheme={setTheme}> {/* Pass setTheme to Layout */}
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -51,20 +65,4 @@ function App() {
   );
 }
 
-function AuthWrappedApp() {
-  return (
-    <Auth0Provider
-      domain={import.meta.env.VITE_AUTH0_DOMAIN || ''}
-      clientId={import.meta.env.VITE_AUTH0_CLIENT_ID || ''}
-      authorizationParams={{
-        redirect_uri: window.location.origin,
-      }}
-      useRefreshTokens={true}
-      cacheLocation="localstorage"
-    >
-      <App />
-    </Auth0Provider>
-  );
-}
-
-export default AuthWrappedApp;
+export default App;

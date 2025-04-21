@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { Plus, Search, Copy, Eye, EyeOff, Trash } from 'lucide-react';
 import { usePasswords } from '../../hooks/usePasswords';
 import { StoredPassword } from '../../types';
-import { useAuth0 } from '@auth0/auth0-react';
+import { auth } from '../../lib/firebase';
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth0();
   const { passwords, loading, error, addPassword, deletePassword } = usePasswords();
   const [searchTerm, setSearchTerm] = useState('');
+  
   const [showPassword, setShowPassword] = useState<Record<string, boolean>>({});
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPassword, setNewPassword] = useState({
@@ -20,10 +20,13 @@ const Dashboard: React.FC = () => {
 
   const handleAddPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth.currentUser) {
+      throw new Error('User not authenticated');
+    }
     try {
       await addPassword({
         ...newPassword,
-        user_id: user?.sub || '',
+        
       }, 'your-master-key'); // In production, this should be securely managed
       setShowAddModal(false);
       setNewPassword({ title: '', username: '', password: '', url: '', notes: '' });
@@ -48,6 +51,13 @@ const Dashboard: React.FC = () => {
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
 
+   // Filter passwords based on search term
+  const filteredPasswords = passwords.filter((password) => {
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+    return (
+      password.title.toLowerCase().includes(lowerCaseSearchTerm)
+    );
+  });
   return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -76,7 +86,7 @@ const Dashboard: React.FC = () => {
 
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
           <ul className="divide-y divide-gray-200">
-            {passwords.map((password) => (
+            {filteredPasswords.map((password) => (
                 <li key={password.id} className="px-6 py-4 hover:bg-gray-50">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
@@ -93,9 +103,10 @@ const Dashboard: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
+                      {/* Copying the actual password requires decryption on the client-side. Access to the decryption key (master key) is needed. */}
                       <button
                           onClick={() => copyToClipboard(password.username)}
-                          className="p-1 rounded-full text-gray-400 hover:text-gray-500"
+                           className="p-1 rounded-full text-gray-400 hover:text-gray-500"
                       >
                         <Copy className="h-5 w-5" />
                       </button>

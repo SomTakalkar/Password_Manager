@@ -1,20 +1,26 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Shield, Key, Settings, LogOut } from 'lucide-react';
-import { useAuth0 } from '@auth0/auth0-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Shield, Settings, LogOut } from 'lucide-react';
+import { signOut } from 'firebase/auth';
+import { auth } from '../../lib/firebase';
 
 interface LayoutProps {
-  children: React.ReactNode;
+    children: React.ReactNode;
+    setTheme: (theme: 'light' | 'dark') => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC<LayoutProps> = ({ children, setTheme }) => {
+
+    
   const location = useLocation();
-  const navigate = useNavigate();
-  const { logout } = useAuth0();
   const [showSettings, setShowSettings] = useState(false);
 
-  const handleLogout = () => {
-    logout({ logoutParams: { returnTo: window.location.origin } });
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   return (
@@ -76,7 +82,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span>Dark Mode</span>
-                    <button className="px-4 py-2 bg-gray-200 rounded-md">Toggle</button>
+                     <button
+                                    onClick={() => setTheme((currentTheme) =>
+                                        currentTheme === 'light' ? 'dark' : 'light'
+                                    )}
+                                    className="px-4 py-2 bg-gray-200 rounded-md"
+                                >Toggle Dark Mode</button>
                   </div>
                   <div className="flex items-center justify-between">
                     <span>Auto-logout Timer</span>

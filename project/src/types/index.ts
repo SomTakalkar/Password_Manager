@@ -1,19 +1,17 @@
 export interface User {
   id: string;
   email: string;
-  masterPasswordHash: string;
-  twoFactorEnabled: boolean;
 }
 
 export interface StoredPassword {
   id: string;
   title: string;
   username: string;
-  password: string; // Encrypted
+  password: string;
   url?: string;
   notes?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 export interface PasswordGeneratorOptions {
