@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Shield, Key, Settings, LogOut } from 'lucide-react';
-import { useAuth0 } from '@auth0/auth0-react';
+import React, { useContext } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Shield, LayoutDashboard, Key, LogOut, Menu, X, Sun, Moon } from 'lucide-react';
+import { AuthContext } from '../../App';
+import { useTheme } from '../../context/ThemeContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -9,98 +10,100 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { logout } = useAuth0();
-  const [showSettings, setShowSettings] = useState(false);
+  const { logout } = useContext(AuthContext);
+  const { theme, toggleTheme } = useTheme();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
-  const handleLogout = () => {
-    logout({ logoutParams: { returnTo: window.location.origin } });
-  };
+  const isActive = (path: string) => location.pathname === path;
+
+  const navItems = [
+    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/generator', icon: Key, label: 'Generator' },
+  ];
 
   return (
-      <div className="min-h-screen bg-gray-100">
-        <nav className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16">
-              <div className="flex">
-                <div className="flex-shrink-0 flex items-center">
-                  <Shield className="h-8 w-8 text-emerald-500" />
-                  <span className="ml-2 text-xl font-bold text-gray-900">Secure Vault</span>
-                </div>
-                <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                  <Link
-                      to="/dashboard"
-                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                          location.pathname === '/dashboard'
-                              ? 'border-emerald-500 text-gray-900'
-                              : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                      }`}
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                      to="/generator"
-                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                          location.pathname === '/generator'
-                              ? 'border-emerald-500 text-gray-900'
-                              : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                      }`}
-                  >
-                    Password Generator
-                  </Link>
-                </div>
-              </div>
-              <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
-                <button
-                    onClick={() => setShowSettings(!showSettings)}
-                    className="p-2 rounded-full text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-                >
-                  <Settings className="h-6 w-6" />
-                </button>
-                <button
-                    onClick={handleLogout}
-                    className="p-2 rounded-full text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-                >
-                  <LogOut className="h-6 w-6" />
-                </button>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex transition-all duration-300">
+      {/* Mobile Menu Button */}
+      <button
+        className="lg:hidden fixed top-4 right-4 z-50 p-2 bg-white dark:bg-slate-800 rounded-lg text-gray-900 dark:text-white shadow-md"
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+      >
+        {isMobileMenuOpen ? <X /> : <Menu />}
+      </button>
+
+      {/* Sidebar */}
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 z-40 w-64 
+        bg-white dark:bg-slate-900/50 backdrop-blur-xl border-r border-gray-200 dark:border-white/5 
+        transform transition-transform duration-300 ease-in-out
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        <div className="p-6 flex items-center space-x-3 border-b border-gray-100 dark:border-white/5">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 dark:bg-gradient-to-br dark:from-emerald-500/20 dark:to-blue-500/20 flex items-center justify-center border border-emerald-500/20 dark:border-emerald-500/30">
+            <Shield className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
           </div>
+          <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-emerald-800 dark:from-white dark:to-slate-400">
+            Secure Vault
+          </span>
+        </div>
+
+        <nav className="p-4 space-y-2 mt-4">
+          {navItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={`
+                flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200
+                ${isActive(item.path)
+                  ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20'
+                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'}
+              `}
+            >
+              <item.icon className="w-5 h-5" />
+              <span className="font-medium">{item.label}</span>
+            </Link>
+          ))}
         </nav>
 
-        {showSettings && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 w-96">
-                <h2 className="text-xl font-semibold mb-4">Settings</h2>
-                {/* Add your settings options here */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span>Dark Mode</span>
-                    <button className="px-4 py-2 bg-gray-200 rounded-md">Toggle</button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Auto-logout Timer</span>
-                    <select className="border rounded-md px-2 py-1">
-                      <option>15 minutes</option>
-                      <option>30 minutes</option>
-                      <option>1 hour</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="mt-6 flex justify-end">
-                  <button
-                      onClick={() => setShowSettings(false)}
-                      className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-        )}
+        <div className="absolute bottom-0 w-full p-4 border-t border-gray-100 dark:border-white/5 space-y-2">
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="flex items-center space-x-3 px-4 py-3 w-full rounded-xl text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all duration-200"
+          >
+            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            <span className="font-medium">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+          </button>
 
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">{children}</main>
-      </div>
+          <button
+            onClick={logout}
+            className="flex items-center space-x-3 px-4 py-3 w-full rounded-xl text-gray-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 w-full relative overflow-x-hidden">
+        {/* Background Gradients */}
+        <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-emerald-500/5 dark:from-emerald-900/10 to-transparent pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto p-4 lg:p-8 relative z-10">
+          {children}
+        </div>
+      </main>
+
+      {/* Overlay for mobile sidebar */}
+      {isMobileMenuOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-30"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+    </div>
   );
 };
 

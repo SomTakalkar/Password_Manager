@@ -1,40 +1,38 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 
 export const useInactivityTimer = (timeout: number, onInactive: () => void) => {
+  const timerRef = useRef<number>();
+
   const resetTimer = useCallback(() => {
-    const existingTimer = window.localStorage.getItem('inactivityTimer');
-    if (existingTimer) {
-      window.clearTimeout(parseInt(existingTimer));
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
     }
 
-    const newTimer = window.setTimeout(() => {
+    timerRef.current = window.setTimeout(() => {
       onInactive();
     }, timeout);
-
-    window.localStorage.setItem('inactivityTimer', newTimer.toString());
   }, [timeout, onInactive]);
 
   useEffect(() => {
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
-
     const handleActivity = () => {
       resetTimer();
     };
 
-    events.forEach(event => {
-      document.addEventListener(event, handleActivity);
-    });
+    // Use passive event listeners for better performance
+    const options = { passive: true };
+    window.addEventListener('mousedown', handleActivity, options);
+    window.addEventListener('keydown', handleActivity, options);
+    window.addEventListener('touchstart', handleActivity, options);
 
     resetTimer();
 
     return () => {
-      events.forEach(event => {
-        document.removeEventListener(event, handleActivity);
-      });
+      window.removeEventListener('mousedown', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('touchstart', handleActivity);
       
-      const existingTimer = window.localStorage.getItem('inactivityTimer');
-      if (existingTimer) {
-        window.clearTimeout(parseInt(existingTimer));
+      if (timerRef.current) {
+        window.clearTimeout(timerRef.current);
       }
     };
   }, [resetTimer]);

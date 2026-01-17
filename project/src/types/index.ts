@@ -7,13 +7,14 @@ export interface User {
 
 export interface StoredPassword {
   id: string;
+  user_id: string;
   title: string;
   username: string;
-  password: string; // Encrypted
+  encrypted_password: string; // Encrypted content
   url?: string;
   notes?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface PasswordGeneratorOptions {
